@@ -61,6 +61,12 @@ public protocol GraphTraversing {
     ///   - name: Name of the target.
     func target(path: AbsolutePath, name: String) -> GraphTarget?
 
+    /// It returns the aggregate target with the given name in the project that is defined in the given directory path.
+    /// - Parameters:
+    ///   - path: Path to the directory that contains the definition of the project with the target is defined.
+    ///   - name: Name of the target.
+    func aggregateTarget(path: AbsolutePath, name: String) -> GraphAggregateTarget?
+
     /// It returns the targets of the project defined in the directory at the given path.
     /// - Parameter path: Path to the directory that contains the definition of the project.
     func targets(at path: AbsolutePath) -> Set<GraphTarget>

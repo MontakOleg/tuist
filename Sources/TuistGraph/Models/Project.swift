@@ -32,6 +32,9 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
     /// Project targets.
     public var targets: [Target]
 
+    /// Project targets.
+    public var aggregateTargets: [AggregateTarget]
+
     /// Project swift packages.
     public var packages: [Package]
 
@@ -76,6 +79,7 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
     ///   - filesGroup: The root group to place project files within
     ///   - targets: The project targets
     ///                      *(Those won't be included in any build phases)*
+    ///   - aggregateTargets: The project aggregate targets
     ///   - packages: Project swift packages.
     ///   - schemes: Project schemes.
     ///   - ideTemplateMacros: IDE template macros that represent content of IDETemplateMacros.plist.
@@ -95,6 +99,7 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
         settings: Settings,
         filesGroup: ProjectGroup,
         targets: [Target],
+        aggregateTargets: [AggregateTarget],
         packages: [Package],
         schemes: [Scheme],
         ideTemplateMacros: IDETemplateMacros?,
@@ -112,6 +117,7 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
         self.developmentRegion = developmentRegion
         self.options = options
         self.targets = targets
+        self.aggregateTargets = aggregateTargets
         self.packages = packages
         self.schemes = schemes
         self.settings = settings
@@ -158,6 +164,7 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
             settings: settings,
             filesGroup: filesGroup,
             targets: targets,
+            aggregateTargets: aggregateTargets,
             packages: packages,
             schemes: schemes,
             ideTemplateMacros: ideTemplateMacros,
@@ -183,6 +190,7 @@ public struct Project: Hashable, Equatable, CustomStringConvertible, CustomDebug
             settings: settings,
             filesGroup: filesGroup,
             targets: targets,
+            aggregateTargets: aggregateTargets,
             packages: packages,
             schemes: schemes,
             ideTemplateMacros: ideTemplateMacros,

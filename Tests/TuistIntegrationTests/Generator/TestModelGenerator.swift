@@ -143,6 +143,7 @@ final class TestModelGenerator {
         name: String,
         settings: Settings,
         targets: [Target],
+        aggregateTargets: [AggregateTarget] = [],
         packages: [Package] = [],
         schemes: [Scheme]
     ) -> Project {
@@ -158,6 +159,7 @@ final class TestModelGenerator {
             settings: settings,
             filesGroup: .group(name: "Project"),
             targets: targets,
+            aggregateTargets: aggregateTargets,
             packages: packages,
             schemes: schemes,
             ideTemplateMacros: nil,

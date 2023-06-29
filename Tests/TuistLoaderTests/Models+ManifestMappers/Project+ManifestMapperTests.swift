@@ -35,6 +35,7 @@ final class ProjectManifestMapperTests: TuistUnitTestCase {
                 .local(path: "/path"),
             ],
             targets: [],
+            aggregateTargets: [],
             schemes: [],
             fileHeaderTemplate: .string("123"),
             additionalFiles: [.glob(pattern: "/file.swift")],
@@ -77,6 +78,7 @@ final class ProjectManifestMapperTests: TuistUnitTestCase {
                 settings: .default,
                 filesGroup: .group(name: "Project"),
                 targets: [],
+                aggregateTargets: [],
                 packages: [
                     .remote(url: "url", requirement: .branch("b")),
                     .local(path: "/path"),

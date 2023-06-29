@@ -36,6 +36,7 @@ final class ProjectGroupsTests: XCTestCase {
                 .test(filesGroup: .group(name: "Target")),
                 .test(),
             ],
+            aggregateTargets: [],
             packages: [],
             schemes: [],
             ideTemplateMacros: nil,

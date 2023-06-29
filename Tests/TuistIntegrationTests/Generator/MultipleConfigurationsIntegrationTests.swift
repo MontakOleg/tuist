@@ -397,6 +397,7 @@ final class MultipleConfigurationsIntegrationTests: TuistUnitTestCase {
         path: AbsolutePath,
         settings: Settings,
         targets: [Target],
+        aggregateTargets: [AggregateTarget] = [],
         packages: [Package] = [],
         schemes: [Scheme]
     ) -> Project {
@@ -412,6 +413,7 @@ final class MultipleConfigurationsIntegrationTests: TuistUnitTestCase {
             settings: settings,
             filesGroup: .group(name: "Project"),
             targets: targets,
+            aggregateTargets: aggregateTargets,
             packages: packages,
             schemes: schemes,
             ideTemplateMacros: nil,

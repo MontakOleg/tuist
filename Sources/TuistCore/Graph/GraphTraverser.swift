@@ -11,6 +11,7 @@ public class GraphTraverser: GraphTraversing {
     public var workspace: Workspace { graph.workspace }
     public var projects: [AbsolutePath: Project] { graph.projects }
     public var targets: [AbsolutePath: [String: Target]] { graph.targets }
+    public var aggregateTargets: [AbsolutePath: [String: AggregateTarget]] { graph.aggregateTargets }
     public var dependencies: [GraphDependency: Set<GraphDependency>] { graph.dependencies }
 
     private let graph: Graph
@@ -88,6 +89,11 @@ public class GraphTraverser: GraphTraversing {
     public func target(path: AbsolutePath, name: String) -> GraphTarget? {
         guard let project = graph.projects[path], let target = graph.targets[path]?[name] else { return nil }
         return GraphTarget(path: path, target: target, project: project)
+    }
+
+    public func aggregateTarget(path: AbsolutePath, name: String) -> GraphAggregateTarget? {
+        guard let project = graph.projects[path], let target = graph.aggregateTargets[path]?[name] else { return nil }
+        return GraphAggregateTarget(path: path, target: target, project: project)
     }
 
     public func targets(at path: AbsolutePath) -> Set<GraphTarget> {

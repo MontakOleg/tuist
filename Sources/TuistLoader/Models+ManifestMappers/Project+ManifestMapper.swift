@@ -37,6 +37,12 @@ extension TuistGraph.Project {
                 externalDependencies: externalDependencies
             )
         }
+        let aggregateTargets = try manifest.aggregateTargets.map {
+            try TuistGraph.AggregateTarget.from(
+                manifest: $0,
+                generatorPaths: generatorPaths
+            )
+        }
         let schemes = try manifest.schemes.map { try TuistGraph.Scheme.from(manifest: $0, generatorPaths: generatorPaths) }
         let additionalFiles = try manifest.additionalFiles
             .flatMap { try TuistGraph.FileElement.from(manifest: $0, generatorPaths: generatorPaths) }
@@ -63,6 +69,7 @@ extension TuistGraph.Project {
             settings: settings ?? .default,
             filesGroup: .group(name: "Project"),
             targets: targets,
+            aggregateTargets: aggregateTargets,
             packages: packages,
             schemes: schemes,
             ideTemplateMacros: ideTemplateMacros,

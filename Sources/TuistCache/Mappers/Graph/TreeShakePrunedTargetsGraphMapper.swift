@@ -7,13 +7,22 @@ public final class TreeShakePrunedTargetsGraphMapper: GraphMapping {
     public init() {}
 
     public func map(graph: Graph) throws -> (Graph, [SideEffectDescriptor]) {
-        let sourceTargets: Set<TargetReference> = Set(graph.targets.flatMap { projectPath, targets -> [TargetReference] in
+        let targets: Set<TargetReference> = Set(graph.targets.flatMap { projectPath, targets -> [TargetReference] in
             guard graph.projects[projectPath] != nil else { return [] }
             return targets.compactMap { _, target -> TargetReference? in
                 if target.prune { return nil }
                 return TargetReference(projectPath: projectPath, name: target.name)
             }
         })
+
+        let aggregateTargets = graph.aggregateTargets.flatMap { projectPath, targets -> [TargetReference] in
+            guard graph.projects[projectPath] != nil else { return [] }
+            return targets.compactMap { _, target -> TargetReference? in
+                TargetReference(projectPath: projectPath, name: target.name)
+            }
+        }
+
+        let sourceTargets = targets.union(aggregateTargets)
 
         // If the number of source targets matches the number of targets in the graph there's nothing to be pruned.
         if sourceTargets.count == graph.targets.flatMap(\.value.values).count { return (graph, []) }

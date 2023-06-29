@@ -93,6 +93,11 @@ final class ProjectEditorMapper: ProjectEditorMapping {
             .map { ($0.path, $0.targets) }
             .map { path, targets in (path, Dictionary(uniqueKeysWithValues: targets.map { ($0.name, $0) })) }
 
+        let graphAggregateTargets = projects
+            .lazy
+            .map { ($0.path, $0.aggregateTargets) }
+            .map { path, targets in (path, Dictionary(uniqueKeysWithValues: targets.map { ($0.name, $0) })) }
+
         let graphDependencies = projects
             .lazy
             .flatMap { project -> [(GraphDependency, Set<GraphDependency>)] in
@@ -123,6 +128,7 @@ final class ProjectEditorMapper: ProjectEditorMapping {
             projects: graphProjects,
             packages: [:],
             targets: Dictionary(uniqueKeysWithValues: graphTargets),
+            aggregateTargets: Dictionary(uniqueKeysWithValues: graphAggregateTargets),
             dependencies: Dictionary(uniqueKeysWithValues: graphDependencies)
         )
     }
@@ -295,6 +301,7 @@ final class ProjectEditorMapper: ProjectEditorMapping {
             settings: projectSettings,
             filesGroup: manifestsFilesGroup,
             targets: targets,
+            aggregateTargets: [],
             packages: [],
             schemes: [scheme],
             ideTemplateMacros: nil,
@@ -386,6 +393,7 @@ final class ProjectEditorMapper: ProjectEditorMapping {
             settings: projectSettings,
             filesGroup: pluginsFilesGroup,
             targets: pluginTargets,
+            aggregateTargets: [],
             packages: [],
             schemes: allSchemes,
             ideTemplateMacros: nil,

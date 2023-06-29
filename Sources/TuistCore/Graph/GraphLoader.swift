@@ -58,6 +58,7 @@ public final class GraphLoader: GraphLoading {
             projects: cache.loadedProjects,
             packages: cache.packages,
             targets: cache.loadedTargets,
+            aggregateTargets: cache.loadedAggregateTargets,
             dependencies: cache.dependencies
         )
         return graph
@@ -79,6 +80,14 @@ public final class GraphLoader: GraphLoading {
 
         try project.targets.forEach {
             try loadTarget(
+                path: path,
+                name: $0.name,
+                cache: cache
+            )
+        }
+
+        try project.aggregateTargets.forEach {
+            try loadAggregateTarget(
                 path: path,
                 name: $0.name,
                 cache: cache
@@ -116,6 +125,26 @@ public final class GraphLoader: GraphLoading {
         if !dependencies.isEmpty {
             cache.dependencies[.target(name: name, path: path)] = Set(dependencies)
         }
+    }
+
+    private func loadAggregateTarget(
+        path: AbsolutePath,
+        name: String,
+        cache: Cache
+    ) throws {
+        guard !cache.aggregateTargetLoaded(path: path, name: name) else {
+            return
+        }
+        guard cache.allProjects[path] != nil else {
+            throw GraphLoadingError.missingProject(path)
+        }
+        guard let referencedTargetProject = cache.allAggregateTargets[path],
+              let target = referencedTargetProject[name]
+        else {
+            throw GraphLoadingError.targetNotFound(name, path)
+        }
+
+        cache.add(aggregateTarget: target, path: path)
     }
 
     private func loadDependency(
@@ -263,9 +292,11 @@ public final class GraphLoader: GraphLoading {
     final class Cache {
         let allProjects: [AbsolutePath: Project]
         let allTargets: [AbsolutePath: [String: Target]]
+        let allAggregateTargets: [AbsolutePath: [String: AggregateTarget]]
 
         var loadedProjects: [AbsolutePath: Project] = [:]
         var loadedTargets: [AbsolutePath: [String: Target]] = [:]
+        var loadedAggregateTargets: [AbsolutePath: [String: AggregateTarget]] = [:]
         var dependencies: [GraphDependency: Set<GraphDependency>] = [:]
         var frameworks: [AbsolutePath: GraphDependency] = [:]
         var libraries: [AbsolutePath: GraphDependency] = [:]
@@ -277,8 +308,12 @@ public final class GraphLoader: GraphLoading {
             let allTargets = allProjects.mapValues {
                 Dictionary(uniqueKeysWithValues: $0.targets.map { ($0.name, $0) })
             }
+            let allAggregateTargets = allProjects.mapValues {
+                Dictionary(uniqueKeysWithValues: $0.aggregateTargets.map { ($0.name, $0) })
+            }
             self.allProjects = allProjects
             self.allTargets = allTargets
+            self.allAggregateTargets = allAggregateTargets
         }
 
         func add(project: Project) {
@@ -290,6 +325,10 @@ public final class GraphLoader: GraphLoading {
 
         func add(target: Target, path: AbsolutePath) {
             loadedTargets[path, default: [:]][target.name] = target
+        }
+
+        func add(aggregateTarget: AggregateTarget, path: AbsolutePath) {
+            loadedAggregateTargets[path, default: [:]][aggregateTarget.name] = aggregateTarget
         }
 
         func add(framework: GraphDependency, at path: AbsolutePath) {
@@ -306,6 +345,10 @@ public final class GraphLoader: GraphLoading {
 
         func targetLoaded(path: AbsolutePath, name: String) -> Bool {
             loadedTargets[path]?[name] != nil
+        }
+
+        func aggregateTargetLoaded(path: AbsolutePath, name: String) -> Bool {
+            loadedAggregateTargets[path]?[name] != nil
         }
 
         func projectLoaded(path: AbsolutePath) -> Bool {

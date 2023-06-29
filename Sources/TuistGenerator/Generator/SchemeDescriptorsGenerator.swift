@@ -219,16 +219,17 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
         var postActions: [XCScheme.ExecutionAction] = []
 
         try buildAction.targets.forEach { buildActionTarget in
-            guard let buildActionGraphTarget = graphTraverser.target(
-                path: buildActionTarget.projectPath,
-                name: buildActionTarget.name
-            ),
-                let buildableReference = try createBuildableReference(
-                    graphTarget: buildActionGraphTarget,
-                    graphTraverser: graphTraverser,
-                    rootPath: rootPath,
-                    generatedProjects: generatedProjects
-                )
+            guard let buildableReference = try buildableReferenceForTarget(
+                targetReference: buildActionTarget,
+                graphTraverser: graphTraverser,
+                rootPath: rootPath,
+                generatedProjects: generatedProjects
+            ) ?? buildableReferenceForAggregateTarget(
+                targetReference: buildActionTarget,
+                graphTraverser: graphTraverser,
+                rootPath: rootPath,
+                generatedProjects: generatedProjects
+            )
             else {
                 return
             }
@@ -260,6 +261,44 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
             parallelizeBuild: true,
             buildImplicitDependencies: true,
             runPostActionsOnFailure: buildAction.runPostActionsOnFailure ? true : nil
+        )
+    }
+
+    private func buildableReferenceForTarget(
+        targetReference: TargetReference,
+        graphTraverser: GraphTraversing,
+        rootPath: AbsolutePath,
+        generatedProjects: [AbsolutePath: GeneratedProject]
+    ) throws -> XCScheme.BuildableReference? {
+        guard let buildActionGraphTarget = graphTraverser.target(
+            path: targetReference.projectPath,
+            name: targetReference.name
+        ) else { return nil }
+
+        return try createBuildableReference(
+            graphTarget: buildActionGraphTarget,
+            graphTraverser: graphTraverser,
+            rootPath: rootPath,
+            generatedProjects: generatedProjects
+        )
+    }
+
+    private func buildableReferenceForAggregateTarget(
+        targetReference: TargetReference,
+        graphTraverser: GraphTraversing,
+        rootPath: AbsolutePath,
+        generatedProjects: [AbsolutePath: GeneratedProject]
+    ) throws -> XCScheme.BuildableReference? {
+        guard let buildActionGraphTarget = graphTraverser.aggregateTarget(
+            path: targetReference.projectPath,
+            name: targetReference.name
+        ) else { return nil }
+
+        return try createBuildableReference(
+            graphTarget: buildActionGraphTarget,
+            graphTraverser: graphTraverser,
+            rootPath: rootPath,
+            generatedProjects: generatedProjects
         )
     }
 
@@ -754,11 +793,11 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
     // MARK: - Helpers
 
     private func resolveRelativeProjectPath(
-        graphTarget: GraphTarget,
+        graphTargetProject: Project,
         generatedProject _: GeneratedProject,
         rootPath: AbsolutePath
     ) -> RelativePath {
-        let xcodeProjectPath = graphTarget.project.xcodeProjPath
+        let xcodeProjectPath = graphTargetProject.xcodeProjPath
         return xcodeProjectPath.relative(to: rootPath)
     }
 
@@ -781,7 +820,7 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
         guard let generatedProject = generatedProjects[projectPath] else { return nil }
         guard let pbxTarget = generatedProject.targets[graphTarget.target.name] else { return nil }
         let relativeXcodeProjectPath = resolveRelativeProjectPath(
-            graphTarget: graphTarget,
+            graphTargetProject: graphTarget.project,
             generatedProject: generatedProject,
             rootPath: rootPath
         )
@@ -789,6 +828,28 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
         return targetBuildableReference(
             target: target.target,
             pbxTarget: pbxTarget,
+            projectPath: relativeXcodeProjectPath.pathString
+        )
+    }
+
+    private func createBuildableReference(
+        graphTarget: GraphAggregateTarget,
+        graphTraverser: GraphTraversing,
+        rootPath: AbsolutePath,
+        generatedProjects: [AbsolutePath: GeneratedProject]
+    ) throws -> XCScheme.BuildableReference? {
+        let projectPath = graphTarget.project.xcodeProjPath
+        guard let target = graphTraverser.aggregateTarget(path: graphTarget.project.path, name: graphTarget.target.name)
+        else { return nil }
+        guard let generatedProject = generatedProjects[projectPath] else { return nil }
+        let relativeXcodeProjectPath = resolveRelativeProjectPath(
+            graphTargetProject: graphTarget.project,
+            generatedProject: generatedProject,
+            rootPath: rootPath
+        )
+
+        return targetBuildableReference(
+            aggregateTarget: target.target,
             projectPath: relativeXcodeProjectPath.pathString
         )
     }
@@ -880,6 +941,26 @@ final class SchemeDescriptorsGenerator: SchemeDescriptorsGenerating {
             blueprint: pbxTarget,
             buildableName: target.productNameWithExtension,
             blueprintName: target.name,
+            buildableIdentifier: "primary"
+        )
+    }
+
+    /// Returns the scheme buildable reference for a given target.
+    ///
+    /// - Parameters:
+    ///   - aggregateTarget: Aggregate Target manifest.
+    ///   - pbxTarget: Xcode native target.
+    ///   - projectPath: Project name with the .xcodeproj extension.
+    /// - Returns: Buildable reference.
+    private func targetBuildableReference(
+        aggregateTarget: AggregateTarget,
+        projectPath: String
+    ) -> XCScheme.BuildableReference {
+        XCScheme.BuildableReference(
+            referencedContainer: "container:\(projectPath)",
+            blueprint: nil,
+            buildableName: aggregateTarget.name,
+            blueprintName: aggregateTarget.name,
             buildableIdentifier: "primary"
         )
     }

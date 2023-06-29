@@ -14,6 +14,7 @@ protocol ProjectDescriptorGenerating: AnyObject {
     func generate(project: Project, graphTraverser: GraphTraversing) throws -> ProjectDescriptor
 }
 
+// swiftlint:disable:next type_body_length
 final class ProjectDescriptorGenerator: ProjectDescriptorGenerating {
     // MARK: - ProjectConstants
 
@@ -48,6 +49,9 @@ final class ProjectDescriptorGenerator: ProjectDescriptorGenerating {
     /// Generator for the project targets.
     let targetGenerator: TargetGenerating
 
+    /// Generator for the project targets.
+    let aggregateTargetGenerator: AggregateTargetGenerating
+
     /// Generator for the project configuration.
     let configGenerator: ConfigGenerating
 
@@ -64,10 +68,12 @@ final class ProjectDescriptorGenerator: ProjectDescriptorGenerating {
     ///   - schemeDescriptorsGenerator: Generator for the project schemes.
     init(
         targetGenerator: TargetGenerating = TargetGenerator(),
+        aggregateTargetGenerator: AggregateTargetGenerating = AggregateTargetGenerator(),
         configGenerator: ConfigGenerating = ConfigGenerator(),
         schemeDescriptorsGenerator: SchemeDescriptorsGenerating = SchemeDescriptorsGenerator()
     ) {
         self.targetGenerator = targetGenerator
+        self.aggregateTargetGenerator = aggregateTargetGenerator
         self.configGenerator = configGenerator
         self.schemeDescriptorsGenerator = schemeDescriptorsGenerator
     }
@@ -118,6 +124,12 @@ final class ProjectDescriptorGenerator: ProjectDescriptorGenerating {
             pbxProject: pbxProject,
             fileElements: fileElements,
             graphTraverser: graphTraverser
+        )
+
+        _ = try generateAggregateTargets(
+            project: project,
+            pbxproj: pbxproj,
+            pbxProject: pbxProject
         )
 
         generateTestTargetIdentity(
@@ -218,6 +230,24 @@ final class ProjectDescriptorGenerator: ProjectDescriptorGenerating {
             graphTraverser: graphTraverser
         )
         return nativeTargets
+    }
+
+    private func generateAggregateTargets(
+        project: Project,
+        pbxproj: PBXProj,
+        pbxProject: PBXProject
+    ) throws -> [String: PBXAggregateTarget] {
+        var aggregateTargets: [String: PBXAggregateTarget] = [:]
+        try project.aggregateTargets.forEach { target in
+            let aggregateTarget = try aggregateTargetGenerator.generateTarget(
+                target: target,
+                project: project,
+                pbxproj: pbxproj,
+                pbxProject: pbxProject
+            )
+            aggregateTargets[target.name] = aggregateTarget
+        }
+        return aggregateTargets
     }
 
     private func generateTestTargetIdentity(
